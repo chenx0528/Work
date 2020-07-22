@@ -1,0 +1,200 @@
+\begin{description}
+  \item[The main aim of this study is to examine relationship between BMI and sociodemographic characteristics and individual daily behaviors.]
+\end{description}
+
+\begin{itemize}
+  \item ##Preperation
+\end{itemize}
+
+library(tidyverse)
+library(DescTools)
+library(ggplot2)
+library(lmtest)
+survey <- read_tsv("E:/R-H England/hse2016_eul.tab")
+survey %>%
+  select(BMI, Age16g5, Sex, topqual3, nssec8, eqv5, MarStatD, wkhrstot, mins10tot08)
+  
+\section*{Bivariate Association}
+\begin{itemize}
+  \item Bivariate Association
+\end{itemize}
+
+survey %>% 
+  filter(BMI > 0 & wkhrstot >= 0) %>%
+  select(BMI,wkhrstot) %>%
+  cor(method="spearman")
+survey %>% 
+  filter(BMI > 0 & mins10tot08 >= 0) %>% 
+  select(BMI,mins10tot08) %>%
+  cor(method = "spearman")
+survey %>%
+  select(BMI, Age16g5) %>%
+  filter(BMI > 0 & Age16g5 > 0) %>%
+  cor(method = "spearman")
+survey %>%
+  select(BMI, eqv5) %>%
+  filter(BMI > 0, eqv5 >0) %>%
+  cor(method = "spearman")
+
+\section*{Hypothesis testing}
+\begin{itemize}
+  \item Hypothesis testing
+\end{itemize}
+
+
+survey %>% 
+  filter(BMI >0, Age16g5 > 0) %>%
+  ggplot(aes(x = Age16g5, y = BMI, group = Age16g5)) + geom_boxplot() 
+  
+  survey %>%
+  filter(BMI >0, topqual3 > 0) %>%
+  ggplot(mapping = aes(x = topqual3, y = BMI, group = topqual3))+ geom_boxplot()
+
+survey %>%
+  filter(BMI >0, eqv5 > 0) %>%
+  ggplot(mapping = aes(x = eqv5, y = BMI, group = eqv5)) + geom_boxplot()
+
+survey %>%
+  filter(BMI >0, nssec8 > 0& nssec8 < 99) %>%
+  ggplot(mapping = aes(x = nssec8, y = BMI, group = nssec8)) + geom_boxplot()
+
+survey %>%
+  filter(BMI >0, MarStatD > 0) %>%
+  ggplot(mapping = aes(x = MarStatD, y = BMI, group = MarStatD))+ geom_boxplot()
+
+
+survey %>% 
+  filter(BMI >0) %>% 
+  t.test(BMI ~ Sex, data = .)
+
+survey %>% 
+  filter(BMI > 0, Age16g5 > 0) %>% 
+  drop_na(Age16g5) %>%
+  aov(BMI ~ Age16g5, data=.) %>% 
+  summary
+
+survey %>% 
+  filter(BMI > 0, topqual3 > 0) %>% 
+  drop_na(topqual3) %>%
+  aov(BMI ~ topqual3, data=.) %>% 
+  summary
+
+survey %>% 
+  filter(BMI > 0, nssec8 > 0 & nssec8 <99) %>% 
+  drop_na(topqual3) %>%
+  aov(BMI ~ nssec8, data=.) %>% 
+  summary
+
+survey %>% 
+  filter(BMI > 0, eqv5 > 0) %>% 
+  drop_na(eqv5) %>%
+  aov(BMI ~ eqv5, data=.) %>% 
+  summary
+
+survey %>% 
+  filter(BMI > 0, MarStatD > 0) %>% 
+  drop_na(MarStatD) %>%
+  aov(BMI ~ MarStatD, data=.) %>% 
+  summary
+
+\section*{Linear Regression}
+\begin{itemize}
+  \item Linear Regression
+\end{itemize}
+
+library(tidyverse)
+survey <- read.table("E:/R-H England/hse2016_eul.tab", sep="\t",header = T)
+survey <- select(survey,c("Age16g5","topqual3", "nssec8", "eqv5","MarStatD",
+                          "wkhrstot","mins10tot08","BMI"))
+model1 <- filter(survey, BMI>=0 & Age16g5 >0 & eqv5 >0&mins10tot08>0&wkhrstot>0&topqual3>0&nssec8>0)
+summary(model1)
+cor(model1)
+
+model1 <- filter(survey,BMI>=0 & Age16g5 >0 & eqv5 >0&mins10tot08>0&wkhrstot>0&topqual3 > 0& nssec8 >0)
+model1$Age16g5 <- as.factor(model1$Age16g5)
+model1$eqv5 <- as.factor(model1$eqv5)
+model1$topqual3 <- as.factor(model1$topqual3)
+model1$nssec8 <- as.factor(model1$nssec8)
+model1$MarStatD <-as.factor(model1$MarStatD)
+
+lm_fit1<- lm(BMI ~ mins10tot08 + wkhrstot + model1$Age16g5 + model1$eqv5 + model1$topqual3 + model1$nssec8 + model1 $MarStatD,data=model1)
+summary(lm_fit1)
+
+y.res<-residuals(lm_fit1)  
+y.rst<-rstandard(lm_fit1)  
+y.fit<-predict(lm_fit1)   
+op<-par(mfrow=c(1, 2))    
+plot(y.res~y.fit)
+plot(y.rst~y.fit)
+
+resettest(lm_fit1)
+plot(lm_fit1, which = 1)
+plot(lm_fit1,which=2)
+
+##
+model2 <- filter(survey,BMI>=0 & mins10tot08 >0 )
+lm_fit2 <-lm(BMI ~ mins10tot08, data = model2)
+summary(lm_fit2)
+resettest(lm_fit2)
+
+##
+model3 <- filter(survey,BMI>=0 & mins10tot08 >0 & wkhrstot >0)
+lm_fit3 <-lm(BMI ~ mins10tot08 + wkhrstot, data = model3)
+summary(lm_fit3)
+resettest(lm_fit3)
+
+##
+model4 <- filter(survey,BMI>=0 & Age16g5 >0 & mins10tot08 >0 & wkhrstot >0)
+model4$Age16g5 <- as.factor(model4$Age16g5)
+
+lm_fit4 <-lm(BMI ~ mins10tot08 + wkhrstot + model4$Age16g5, data = model4)
+summary(lm_fit4)
+resettest(lm_fit4)
+##
+model5 <- filter(survey,BMI>=0 & Age16g5 >0 & mins10tot08 >0 & wkhrstot >0&eqv5 >0)
+model5$Age16g5 <- as.factor(model5$Age16g5)
+model5$eqv5 <- as.factor(model5$eqv5)
+
+lm_fit5 <- lm(BMI~ mins10tot08 + wkhrstot + model5$Age16g5 + model5$eqv5,data=model5)
+summary(lm_fit5)
+resettest(lm_fit5)
+##
+model6 <- filter(survey,BMI>=0 & Age16g5 >0 & mins10tot08 >0 & wkhrstot >0&eqv5 >0&topqual3 > 0)
+model6$Age16g5 <- as.factor(model6$Age16g5)
+model6$eqv5 <- as.factor(model6$eqv5)
+model6$topqual3 <- as.factor(model6$topqual3)
+
+lm_fit6 <- lm(BMI~ mins10tot08 + wkhrstot + model6$Age16g5 + model6$eqv5 + model6$topqual3, data=model6)
+summary(lm_fit6)
+
+##
+model7 <- filter(survey,BMI>=0 & Age16g5 >0 & eqv5 >0&mins10tot08>0&wkhrstot>0&topqual3 > 0& nssec8 >0)
+model7$Age16g5 <- as.factor(model7$Age16g5)
+model7$eqv5 <- as.factor(model7$eqv5)
+model7$topqual3 <- as.factor(model7$topqual3)
+model7$nssec8 <- as.factor(model7$nssec8)
+
+lm_fit7<- lm(BMI~mins10tot08 + wkhrstot + model7$Age16g5 + model7$eqv5 + model7$topqual3 + model7$nssec8,data=model7)
+summary(lm_fit7)
+resettest(lm_fit7)
+
+\section*{Specific model}
+\begin{itemize}
+  \item Specific model
+\end{itemize}
+
+model8 <-filter(survey, BMI>=0 & Age16g5 >0 &mins10tot08>0 & topqual3>0& nssec8 >0)
+model8$Age16g5 <- as.factor(model8$Age16g5)
+model8$topqual3 <- as.factor(model8$topqual3)
+model8$nssec8 <- as.factor(model8$nssec8)
+model8$MarStatD <-as.factor(model8$MarStatD)
+
+lm_rfit2 <- lm(log(BMI) ~ log(mins10tot08) + model8$topqual3 + model8$MarStatD, data = model8)
+summary(lm_rfit2)
+
+resettest(lm_rfit2)
+plot(lm_rfit2, which = 1)
+plot(lm_rfit,which=2)
+```
+
+\end{document}
